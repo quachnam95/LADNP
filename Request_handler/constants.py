@@ -1,0 +1,8 @@
+# Request status
+REQ_STATUS_SUCCESS = 1
+REQ_STATUS_FAIL = 2
+REQ_STATUS_NEW = 3
+REQ_STATUS_PROCESSING = 4
+
+# Periodically check new request
+INTERVAL_BY_SEC = 5
