@@ -267,7 +267,7 @@ def larac_alg(g_links, sw1, sw2, delay_bound, d=0):
 
 lst_all_devices = []
 lst_all_devices_id = []
-lst_all_links = []
+lst_all_links = {}
 
 
 def get_resources():
@@ -322,7 +322,7 @@ def print_path(list_path):
 def process_request(interval):
     # while True:
         get_resources()
-        gen_connection(nodes, lst_all_links)
+        # gen_connection(nodes, lst_all_links)
         
         # Load all links to a list
         g_links = defaultdict(list)
