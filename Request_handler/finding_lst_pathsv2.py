@@ -395,23 +395,26 @@ def process_request(interval):
                     v = lst_selected_devices[j]
                     lst_paths.extend(larac_alg(g_links, u, v, delay_cons)['path'])
                     print(("%s,%s,%s")%(u, v,lst_paths))
+                    jsonStringUV = jsonStringUV + "{\"source\": \"" + u + "\", \"destination\": \"" + v + "\", \"nextHop\": " + str(lst_paths).replace("\'","\"") + "}, "
                     # resultReturn = "Finding path {%s} <--> {%s}...with result {%s}"%(lst_selected_switches[i], lst_selected_switches[j],lst_paths)
                     count_lst_paths = len(lst_paths) - 1
                     for z in range(1, count_lst_paths):
                         print(("[(source/forwarding) , (destination) , (next hop/sw)] == [%s,%s,%s]")%(lst_paths[0], lst_paths[-1], lst_paths[z]))
-                        jsonStringUV = jsonStringUV + "{\"source/forwarding\": \"" + lst_paths[0] + "\", " + "\"destination\": \"" + lst_paths[-1] + "\", " + "\"nextHop/sw\": \"" + lst_paths[z] + "\"}, "
+                        # jsonStringUV = jsonStringUV + "{\"source\": \"" + lst_paths[0] + "\", " + "\"destination\": \"" + lst_paths[-1] + "\", " + "\"nextHop\": \"" + lst_paths[z] + "\"}, "
                     print(("[(source/forwarding) , (destination) , (next hop/sw)] == [%s,%s,%s]")%(lst_paths[0], lst_paths[-1], lst_paths[-1]))
                     # return resultReturn   
                     lst_paths = []
                     # jsonString = jsonString[:-2]
                     # jsonString = jsonString + "], "
                     # jsonString = jsonString + "\"resultvu\": ["
+                    
                     lst_paths.extend(larac_alg(g_links,v, u, delay_cons)['path'])
                     print(("%s,%s,%s")%(v, u, lst_paths))
+                    jsonStringVU = jsonStringVU + "{\"source\": \"" + v + "\", \"destination\": \"" + u + "\", \"nextHop\": " + str(lst_paths).replace("\'","\"") + "}, "
                     count_lst_paths = len(lst_paths) - 1
                     for z in range(1, count_lst_paths):
                         print(("[(source/forwarding) , (destination) , (next hop/sw)] == [%s,%s,%s]")%(lst_paths[0], lst_paths[-1], lst_paths[z]))
-                        jsonStringVU = jsonStringVU + "{\"source/forwarding\": \"" + lst_paths[0] + "\", " + "\"destination\": \"" + lst_paths[-1] + "\", " + "\"nextHop/sw\": \"" + lst_paths[z] + "\"}, "
+                        # jsonStringVU = jsonStringVU + "{\"source\": \"" + lst_paths[0] + "\", " + "\"destination\": \"" + lst_paths[-1] + "\", " + "\"nextHop\": \"" + lst_paths[z] + "\"}, "
                     print(("[(source/forwarding) , (destination) , (next hop/sw)] == [%s,%s,%s]")%(lst_paths[0], lst_paths[-1], lst_paths[-1]))  
                     lst_paths = []
             jsonStringUV = jsonStringUV[:-2]
@@ -420,9 +423,21 @@ def process_request(interval):
             jsonStringVU = jsonStringVU + "]"
             # jsonString = jsonString[:-2]
             jsonString = jsonString + jsonStringUV + jsonStringVU + "}"
-            print("jsonString = ",jsonString)
+            # print("jsonString = ",jsonString)
             jsonLoad = json.loads(jsonString)
-            print("jsonLoad = ",jsonLoad)
+            # print("jsonLoad = ",jsonLoad)
+            # print("resultuv from json = ", jsonLoad['resultuv'])
+            jsonResult = jsonLoad['resultuv']
+            i = 0
+            for data in jsonResult:
+                jsonDataLoad = json.loads(str(data).replace("\'","\""))
+                print("resultuv from json with index %s = %s "%(i, jsonDataLoad))
+                print("source = ", jsonDataLoad['source'])
+                print("destination = ", jsonDataLoad['destination'])
+                print("nextHop = ", jsonDataLoad['nextHop'])
+                print("nextHop index 0 = ", jsonDataLoad['nextHop'][0])
+                i = i + 1
+
 
 def gen_connection(n_nodes, lst_links):
     print("check run gen_connection")
