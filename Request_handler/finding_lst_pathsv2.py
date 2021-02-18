@@ -25,10 +25,19 @@ sys.path.append(curr_path)
 #Configure the parameters for database
 def db_connect():
     # return db.connect(DB_SERVER, DB_USER, DB_PASSWORD, DB_SCHEMA)
+    #HieuDBDATA
+    #return db.connect(
+    #    host='localhost',
+    #    user='hieunv',
+    #    password='Hieu@1234',
+    #    database='LocAwareNet'
+    #)
+
+    #NamDBDATA
     return db.connect(
         host='localhost',
-        user='hieunv',
-        password='Hieu@1234',
+        user='namqh',
+        password='Nam@1234',
         database='LocAwareNet'
     )
 
