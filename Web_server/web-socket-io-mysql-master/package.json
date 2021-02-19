@@ -1,0 +1,15 @@
+{
+    "name": "websocket-io",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "devDependencies": {},
+    "dependencies": {
+        "config": "^3.3.1",
+        "express": "^4.17.1",
+        "mysql2": "^2.1.0",
+        "socket.io": "^2.3.0"
+    }
+}
