@@ -2,7 +2,12 @@ var mysql = require('mysql2');
 var config = require('config');
 var port = config.get('port');
 var mysqlConfig = config.get('mysql');
-var io = require('socket.io').listen(port);
+// var io = require('socket.io').listen(port);
+const express = require('express');
+const app = express();
+const path = require('path');
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
 // dinh nghia cac thong so ket noi db mysql
 var db = mysql.createConnection({
     host: mysqlConfig.host,
@@ -12,6 +17,12 @@ var db = mysql.createConnection({
     database: mysqlConfig.database
 });
 
+server.listen(port, () => {
+    console.log('Server listening at port %d', port);
+});
+
+
+app.use(express.static(path.join(__dirname, 'public')));
 // connect toi db
 db.connect(function (err) {
     if (err) console.log(err)
@@ -22,13 +33,13 @@ var isInitDevices = false;
 var socketCount = 0
 var maxIdUserRequest = 0;
 // khi co nguoi dung ket noi toi socket => raise event connection
-io.sockets.on('connection', function (socket) {
+io.on('connection', function (socket) {
     socketCount++;
     // gui luon ve client users connected thanh cong
-    io.sockets.emit('users connected', socketCount);
+    io.emit('users connected', socketCount);
     socket.on('disconnect', function () {
         socketCount--
-        io.sockets.emit('users connected', socketCount)
+        io.emit('users connected', socketCount)
     })
     if (!isInitDevices) {
         // Initial app start, run db query lay all devices
@@ -39,21 +50,21 @@ io.sockets.on('connection', function (socket) {
             })
             .on('end', function () {
                 // Lay xong het du lieu devices, gui ve client theo kenh initial devices, gia tri gui ve la devices
-                io.sockets.emit('initial devices', devices);
+                io.emit('initial devices', devices);
             })
         isInitDevices = true
     } else {
         // Initial notes already exist, send out
-        io.sockets.emit('initial devices', devices)
+        io.emit('initial devices', devices)
     }
     socket.on('new user_requests', function (data) {
         try {
-            console.log('insert user request ' + data.req_bandwidth+' '+data.req_delay);
+            console.log('insert user request ' + data.req_bandwidth + ' ' + data.req_delay);
             // cient gui yeu cau them moi user_requests => insert vao db xong roi gui ve client theo kenh new user_requests
             db.query(`insert into user_requests (bw_mbps,delay_ms) values(${data.req_bandwidth},${data.req_delay})`)
                 .on('result', function (dx) {
                     console.log('send noti new user request ' + dx.insertId);
-                    io.sockets.emit('new user_requests', dx.insertId);
+                    io.emit('new user_requests', dx.insertId);
                 })
                 .on('end', function (dt) {
                     // Only emit notes after query has been completed
@@ -71,7 +82,7 @@ io.sockets.on('connection', function (socket) {
             WHERE NOT EXISTS (Select id From regions WHERE id =${data.id}) LIMIT 1`, null, function (err, results, fields) {
                 if (!err) {
                     console.log('insert xong regions ' + data.id);
-                    io.sockets.emit('new regions', data);
+                    io.emit('new regions', data);
                 }
                 else {
                     console.log(err);
