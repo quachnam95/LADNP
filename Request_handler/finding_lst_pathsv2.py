@@ -328,10 +328,10 @@ def print_path(list_path):
     str_path = str_path.rstrip('->')
     print(str_path)
 
+jsonStringGlobal = ""
 def process_request(interval):
     # while True:
         get_resources()
-        # gen_connection(nodes, lst_all_links)
         
         # Load all links to a list
         g_links = defaultdict(list)
@@ -446,105 +446,58 @@ def process_request(interval):
                 print("nextHop = ", jsonDataLoad['nextHop'])
                 print("nextHop index 0 = ", jsonDataLoad['nextHop'][0])
                 i = i + 1
-
-
-def gen_connection(n_nodes, lst_links):
-    print("check run gen_connection")
-    sw2sw_list = defaultdict(list)
-    # sw_port_matrix = [[0] * (NUM_OF_SWITCHES + 1)] * (NUM_OF_SWITCHES + 1) # -> Why values are same with same column
-    sw_port_matrix = [[0 for x in range(n_nodes + 1)] for y in range(n_nodes + 1)]
-    num_ports = [2] * (n_nodes + 1)
-    # for i in range(NUM_OF_SWITCHES+1):
-    #     print(sw_port_matrix[i])
-    # Create switches and links among them
-    for link in lst_links:
-        # print('******')
-        i1 = int(link[1][1:])
-        out_port = num_ports[i1]
-        i2 = int(link[2][1:])
-        in_port = num_ports[i2]
-        # (node, bw, delay, out_port_from_1, in_port_to_2)
-        # Use link list
-        sw2sw_list[link[1]].append((link[2], link[4], link[3], out_port, in_port))
-        # Use adjacent matrix to store connected port
-        sw_port_matrix[i1][i1] = 1 # This port number is assigned to attached host
-        sw_port_matrix[i1][i2] = out_port # This port number is assigned to next-hop
-        sw_port_matrix[i2][i2] = 1 # This port number is assigned to attached host
-        sw_port_matrix[i2][i1] = in_port # This port number is assigned to next-hop
-        num_ports[i1] += 1
-        num_ports[i2] += 1
-        print("check run gen_connection")
-    file = 'debug/sw_port_matrix%d.txt' % n_nodes
-    f = open(file, "w")
-    f.write('*')
-    for k in range(1, n_nodes + 1):
-        f.write("\ts%d" % k)
-    f.write("\n")
-    for i in range(1, n_nodes + 1):
-        f.write("s%d" % i)
-        for j in range(1, n_nodes + 1):
-            f.write('\t%d' % sw_port_matrix[i][j])
-        f.write('\n')
-        print("check run gen_connection")
-    f.close()
-    print("check run gen_connection")
-    return sw2sw_list, sw_port_matrix
-
-def build_ovs_flow(path, sw_port_matrix, file, dest=False):
-    """
-    Build ovs flow from a path between two switches
-    :param path: hop-path between two switches
-    :param sw_port_matrix: where stores connected port among switches
-    :param file: where flow rules are stored
-    :param dest: set True if indicating dest address in the flow
-    :return: file
-    """
-    f = open(file, "a")
-    f.write('echo "add flow: %s"\n' % path)
-    if dest:
-        str_cmd = 'sudo ovs-ofctl add-flow %s ' \
-                  '"priority=2,ip,nw_dst=10.0.0.%d,in_port=%d,actions=%d"\n'
+            
+            build_ovs_flow(jsonString)
+                
+def build_ovs_flow(jsonString):
+    jsonLoad = json.loads(jsonString)
+    jsonResult = jsonLoad['resultuv']
+    
+    i = 0
+    for data in jsonResult:
+        str_cmd = ""
+        jsonDataLoad = json.loads(str(data).replace("\'","\""))
+        jsonNextHop = jsonDataLoad['nextHop']
+        x = 0
+        for nextHop in jsonNextHop:
+            swNH = jsonNextHop[x]
+            str_cmd = "sudo ovs-ofctl  -O OpenFlow13 add-flow " + swNH 
+            str_cmd = str_cmd + " \"priority=1,ip,nw_dst=10.0.0." + swNH[1:] + ",in_port=\"" + swNH + "-eth1\",actions=1\""
+            print(str_cmd)
+            os.system(str_cmd)
+            x = x + 1
+        i = i + 1
+    #str_cmd = 'sudo ovs-ofctl add-flow -o OpenFlow13 %s "priority=2,ip,nw_dst=10.0.0.%d,in_port=2,actions=1"\n'
         # str_cmd_arp = 'sudo ovs-ofctl add-flow %s "priority=2,arp,in_port=%d,actions=%d"\n'
         # str_cmd = 'sudo ovs-ofctl add-flow %s ' \
         #     '"priority=2,arp,dl_dst=0:0:0:0:0:%d,in_port=%d,actions=%d"\n'
-    else:
-        str_cmd = 'sudo ovs-ofctl add-flow %s ' \
-                  '"priority=2,in_port=%d,actions=%d"\n'
-    src = int(path[0][1:])
-    dst = int(path[len(path)-1][1:])
-    for si in range(0, len(path)):
-        sw = path[si]
-        if si == 0:
-            inport = sw_port_matrix[int(sw[1:])][int(path[si][1:])]
-            output = sw_port_matrix[int(sw[1:])][int(path[si + 1][1:])]
-        elif si > 0 and si < len(path) - 1:
-            inport = sw_port_matrix[int(sw[1:])][int(path[si - 1][1:])]
-            output = sw_port_matrix[int(sw[1:])][int(path[si + 1][1:])]
-        else:
-            inport = sw_port_matrix[int(sw[1:])][int(path[si - 1][1:])]
-            output = sw_port_matrix[int(sw[1:])][int(path[si][1:])]
+    
 
-        if dest:
-            # flow from sw toward to next-hop
-            cmd = str_cmd % (sw.strip(), dst, inport, output)
-            f.write(cmd)
-            # cmd_arp = str_cmd_arp % (sw.strip(), inport, output)
-            # f.write(cmd_arp)
-            # flow from next-hop back to sw
-            cmd = str_cmd % (sw.strip(), src, output, inport)
-            f.write(cmd)
-            # cmd_arp = str_cmd_arp % (sw.strip(), output, inport)
-            # f.write(cmd_arp)
-        else:
-            # flow from sw toward to next-hop
-            cmd = str_cmd % (sw.strip(), inport, output)
-            f.write(cmd)
-            # flow from next-hop back to sw
-            cmd = str_cmd % (sw.strip(), output, inport)
-            f.write(cmd)
-        f.write("\n")
-    f.close()
+    
 
+if __name__ == '__main__':
+    print ("Start Main Process")
+    #get_resources()
+    process_request(5)
+    topo = mininet_utils.MainTopo(lst_all_links)
+    print('Generating topology ...')
+    mininet_utils.generate(topo)
+
+
+#    print ("Start Main Process")
+#    get_resources()
+#    print ("List of all links")
+#    print (lst_all_links)
+#    try:
+#        threading._start_new_thread(process_request, (5,))
+#    except:
+#       print("Error: Unable to start thread")
+#    while True:
+#        pass
+#    topo = mininet_utils.MainTopo(lst_all_links)
+#    print('Generating topology...')
+#    mininet_utils.generate(topo)
+#    print ("End Main Process")
 """
 #handle the request
 def process_request(delay):
@@ -609,28 +562,3 @@ def process_request(delay):
                     print(("[(source/forwarding) , (destination) , (next hop/sw)] == [%s,%s,%s]")%(lst_paths[0], lst_paths[-1], lst_paths[-1]))  
                     lst_paths = []
 """
-
-if __name__ == '__main__':
-    print ("Start Main Process")
-    #get_resources()
-    process_request(5)
-    topo = mininet_utils.MainTopo(lst_all_links)
-    print('Generating topology ...')
-    mininet_utils.generate(topo)
-
-
-#    print ("Start Main Process")
-#    get_resources()
-#    print ("List of all links")
-#    print (lst_all_links)
-#    try:
-#        threading._start_new_thread(process_request, (5,))
-#    except:
-#       print("Error: Unable to start thread")
-#    while True:
-#        pass
-#    topo = mininet_utils.MainTopo(lst_all_links)
-#    print('Generating topology...')
-#    mininet_utils.generate(topo)
-#    print ("End Main Process")
- 

@@ -10,6 +10,7 @@ from mininet.util import dumpNodeConnections
 from mininet.log import setLogLevel
 from mininet.cli import CLI
 
+
 class SingleTopo(Topo):
     "N hosts connected to single switch"
     def __init__(self, device, lstHosts, **opts):
@@ -83,8 +84,8 @@ def generate(Topo):
     dumpNodeConnections(net.switches)
     # print("Testing network connectivity")
     # net.pingAll()
-    #CLI(net)
-    # net.stop()
+    CLI(net)
+    #net.stop()
 
 
 # def createFlowTable(paths):
