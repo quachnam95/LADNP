@@ -26,20 +26,20 @@ sys.path.append(curr_path)
 def db_connect():
     # return db.connect(DB_SERVER, DB_USER, DB_PASSWORD, DB_SCHEMA)
     #HieuDBDATA
-    #return db.connect(
-    #    host='localhost',
-    #    user='hieunv',
-    #    password='Hieu@1234',
-    #    database='LocAwareNet'
-    #)
+    return db.connect(
+       host='localhost',
+       user='hieunv',
+       password='Hieu@1234',
+       database='LocAwareNet'
+    )
 
     #NamDBDATA
-    return db.connect(
-        host='localhost',
-        user='namqh',
-        password='Nam@1234',
-        database='LocAwareNet'
-    )
+    # return db.connect(
+    #     host='localhost',
+    #     user='namqh',
+    #     password='Nam@1234',
+    #     database='LocAwareNet'
+    # )
 
 conn = db_connect()
 conn.autocommit = True
@@ -452,6 +452,7 @@ def process_request(interval):
 def build_ovs_flow(jsonString):
     jsonLoad = json.loads(jsonString)
     jsonResult = jsonLoad['resultuv']
+    arrayCheckSw = []
     
     i = 0
     for data in jsonResult:
@@ -461,11 +462,16 @@ def build_ovs_flow(jsonString):
         x = 0
         for nextHop in jsonNextHop:
             swNH = jsonNextHop[x]
-            str_cmd = "sudo ovs-ofctl  -O OpenFlow13 add-flow " + swNH 
-            str_cmd = str_cmd + " \"priority=1,ip,nw_dst=10.0.0." + swNH[1:] + ",in_port=\"" + swNH + "-eth1\",actions=1\""
-            print(str_cmd)
-            os.system(str_cmd)
-            x = x + 1
+            checkSw = swNH in arrayCheckSw
+            print(swNH + " in arrayCheckSw ===> " + str(checkSw))
+            print("arrayCheckSw = " + str(arrayCheckSw))
+            if checkSw == False:
+                arrayCheckSw.append(swNH)
+                str_cmd = "sudo ovs-ofctl  -O OpenFlow13 add-flow " + swNH 
+                str_cmd = str_cmd + " \"priority=1,ip,nw_dst=10.0.0." + swNH[1:] + ",in_port=\"" + swNH + "-eth1\",actions=1\""
+                print(str_cmd)
+                os.system(str_cmd)
+                x = x + 1
         i = i + 1
     #str_cmd = 'sudo ovs-ofctl add-flow -o OpenFlow13 %s "priority=2,ip,nw_dst=10.0.0.%d,in_port=2,actions=1"\n'
         # str_cmd_arp = 'sudo ovs-ofctl add-flow %s "priority=2,arp,in_port=%d,actions=%d"\n'
